@@ -1,0 +1,65 @@
+%% Final STM32F401RCT6 + ESP32 USB HID Project Flowchart
+%% Button path has priority. The uploaded run_demo() contains an intentional infinite loop.
+flowchart TD
+    S([Power-on / Reset]) --> I[Initialize system]
+    I --> I1[Configure system clock<br/>84 MHz SYSCLK<br/>48 MHz USB clock]
+    I1 --> I2[Initialize SysTick]
+    I2 --> I3[Initialize GPIO<br/>LED PC13<br/>Button PA0]
+    I3 --> I4[Initialize USB OTG FS<br/>USB HID keyboard]
+    I4 --> E{USB host enumerated?}
+
+    E -- No --> L0[LED blinks quickly<br/>Continue waiting]
+    L0 --> E
+
+    E -- Yes --> M[Enter main application loop]
+    M --> L[Update LED status<br/>Slow blink / Caps Lock indication]
+    L --> B{Onboard button<br/>pressed?}
+
+    B -- Yes --> D[Debounce for 20 ms]
+    D --> B2{Button still pressed?}
+    B2 -- No --> U[Poll ESP32 UART2]
+    B2 -- Yes --> R[Run button demonstration: run_demo]
+
+    R --> R1[Press Enter<br/>Wait 2 s]
+    R1 --> R2[Type 7410<br/>Press Enter]
+    R2 --> R3[Open terminal<br/>Ctrl + Alt + T]
+    R3 --> R4[Type firefox<br/>Press Enter]
+    R4 --> R5[Type google.com<br/>Press Enter]
+    R5 --> R6[Wait for page load]
+    R6 --> R7[Type search query:<br/>what is USB HID]
+    R7 --> R8[Wait 10 s]
+    R8 --> R9[Ctrl + Tab<br/>Ctrl + C]
+    R9 --> R10[Continuously type shell command<br/>echo Hello from STM32 Baremetal USB Keyboard #N]
+    R10 --> R11[Press Enter<br/>Increment counter<br/>Wait 1 s]
+    R11 --> R10
+
+    B -- No --> U
+    U --> U1[Read USART2 RX register<br/>115200 baud, 8N1]
+    U1 --> C{Complete message received?<br/>LF delimiter found}
+    C -- No --> M
+    C -- Yes --> O{USB still configured?}
+    O -- No --> M
+    O -- Yes --> V{Receive buffer overflow?}
+    V -- Yes --> X[Discard overlong message<br/>Reset receive state]
+    X --> M
+    V -- No --> H[Convert ASCII characters<br/>to USB HID usages]
+    H --> H1[Send key-press report<br/>Send key-release report]
+    H1 --> H2[Type received ESP32 message<br/>Then press Enter]
+    H2 --> Q[Reset UART message state]
+    Q --> M
+
+    classDef start fill:#DCFCE7,stroke:#16A34A,stroke-width:2px,color:#111827;
+    classDef init fill:#E0F2FE,stroke:#0284C7,stroke-width:2px,color:#111827;
+    classDef decision fill:#FEF3C7,stroke:#D97706,stroke-width:2px,color:#111827;
+    classDef button fill:#FCE7F3,stroke:#DB2777,stroke-width:2px,color:#111827;
+    classDef uart fill:#EDE9FE,stroke:#7C3AED,stroke-width:2px,color:#111827;
+    classDef loop fill:#FEE2E2,stroke:#DC2626,stroke-width:2px,color:#111827;
+    classDef endpath fill:#F3F4F6,stroke:#6B7280,stroke-width:1.5px,color:#111827;
+
+    class S start;
+    class I,I1,I2,I3,I4 init;
+    class E,B,B2,C,O,V decision;
+    class D,R,R1,R2,R3,R4,R5,R6,R7,R8,R9 button;
+    class R10,R11 loop;
+    class U,U1,H,H1,H2,Q uart;
+    class L0,L,X,M endpath;

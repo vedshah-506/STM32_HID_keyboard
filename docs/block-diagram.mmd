@@ -1,0 +1,30 @@
+%% ESP32-to-STM32 USB HID Keyboard Project
+%% Report-ready system block diagram
+flowchart LR
+    A[Input device<br/>Phone / laptop / tablet<br/><br/>User enters text] -->|Wi-Fi connection| B[ESP32<br/>SoftAP + HTTP WebServer<br/><br/>192.168.4.1]
+
+    B -->|HTTP POST /send<br/>message text| C[ESP32 UART2<br/>115200 baud, 8N1<br/><br/>TX GPIO17<br/>RX GPIO16]
+
+    C -->|UART TX → STM32 RX<br/>Text bytes + LF delimiter| D[STM32F401RCT6<br/>USART2 bare-metal receiver<br/><br/>PA3 = RX<br/>PA2 = TX]
+
+    D -->|ASCII character<br/>to HID usage conversion| E[USB HID keyboard engine<br/><br/>Key press report<br/>Key release report]
+
+    E -->|USB Full-Speed<br/>D− PA11, D+ PA12| F[Computer<br/>USB HID host<br/><br/>Receives simulated<br/>keyboard input]
+
+    G[Power and signal reference<br/>3.3 V logic<br/>Common GND] -.-> C
+    G -.-> D
+
+    classDef input fill:#E8F1FF,stroke:#2563EB,stroke-width:2px,color:#111827;
+    classDef esp fill:#E8FFF2,stroke:#16A34A,stroke-width:2px,color:#111827;
+    classDef stm fill:#FFF7E6,stroke:#D97706,stroke-width:2px,color:#111827;
+    classDef usb fill:#F3E8FF,stroke:#9333EA,stroke-width:2px,color:#111827;
+    classDef power fill:#F3F4F6,stroke:#6B7280,stroke-width:1.5px,color:#111827;
+
+    class A input;
+    class B,C esp;
+    class D stm;
+    class E,F usb;
+    class G power;
+
+    linkStyle 0,1,2,3,4 stroke:#374151,stroke-width:2px;
+    linkStyle 5,6 stroke:#6B7280,stroke-width:1.5px,stroke-dasharray:5 5;
